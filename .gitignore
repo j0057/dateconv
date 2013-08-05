@@ -1,0 +1,6 @@
+env
+*.pyc
+.cache
+*.swp
+tests/.coverage
+tests/htmlcov
