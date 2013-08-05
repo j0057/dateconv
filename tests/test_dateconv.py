@@ -7,29 +7,34 @@ T = 392425860
 class TestTime(unittest.TestCase):
     def test_to_struct_time_local(self):
         result = dateconv.to_struct_time_local(T)
+
         self.assertIsInstance(result, dateconv.time.struct_time)
         self.assertEqual(result[:6], (1982, 6, 9, 1, 11, 0))
 
     def test_to_struct_time_utc(self):
         result = dateconv.to_struct_time_utc(T)
+
         self.assertIsInstance(result, dateconv.time.struct_time)
         self.assertEqual(result[:6], (1982, 6, 8, 23, 11, 0))
 
     def test_from_struct_time_local(self):
         localtime = dateconv.to_struct_time_local(T)
         result = dateconv.from_struct_time_local(localtime)
+
         self.assertIsInstance(result, int)
         self.assertEqual(result, T)
 
     def test_from_struct_time_utc(self):
         gmtime = dateconv.to_struct_time_utc(T)
         result = dateconv.from_struct_time_utc(gmtime)
+
         self.assertIsInstance(result, int)
         self.assertEqual(result, T)
 
 class TestDateTime(unittest.TestCase):
     def test_to_datetime_naive(self):
         result = dateconv.to_datetime_naive(T) 
+
         self.assertIsInstance(result, dateconv.datetime.datetime)
         self.assertEqual(result.year, 1982)
         self.assertEqual(result.month, 6)
@@ -86,4 +91,42 @@ class TestDateTime(unittest.TestCase):
         self.assertEqual(result, T)
 
 class TestISO8601(unittest.TestCase):
-    pass
+    def test_to_iso8601(self):
+        result = dateconv.to_iso8601(T)
+
+        self.assertIsInstance(result, str)
+        self.assertEqual(result, '1982-06-08T23:11:00Z')
+
+    def test_from_iso8601(self):
+        result = dateconv.from_iso8601('1982-06-08T23:11:00Z')
+        
+        self.assertIsInstance(result, int)
+        self.assertEqual(result, T)
+
+class TestRFC822(unittest.TestCase):
+    def test_to_rfc822(self):
+        result = dateconv.to_rfc822(T)
+    
+        self.assertIsInstance(result, str)
+        self.assertEqual(result, 'Tue, 08 Jun 1982 23:11:00 GMT')
+
+    def test_from_rfc822(self):
+        result = dateconv.from_rfc822('Tue, 08 Jun 1982 23:11:00 GMT')
+
+        self.assertIsInstance(result, int)
+        self.assertEqual(result, T)
+
+    def test_from_rfc822_wrong_1(self):
+        with self.assertRaises(ValueError) as e:
+            dateconv.from_rfc822('Albatross')
+        self.assertEquals(e.exception.message, "Could not parse date 'Albatross'")
+
+class TestPyEphem(unittest.TestCase):
+    def test_to_pyephem(self):
+        result = dateconv.to_pyephem(T)
+
+        self.assertIsInstance(result, dateconv.ephem.Date)
+        self.assertEqual(result.tuple()[:4], (1982, 6, 8, 23))
+
+    def test_from_pyephem(self):
+        pass
