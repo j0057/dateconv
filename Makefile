@@ -8,3 +8,5 @@ MAIN = dateconv
 PKG = 
 
 STATIC_DIRS = 
+
+include build/Makefile

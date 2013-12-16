@@ -1,6 +1,6 @@
-env
+env27
+.cache27
 *.pyc
-.cache
-*.swp
 tests/.coverage
 tests/htmlcov
+*.swp
