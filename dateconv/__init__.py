@@ -4,66 +4,107 @@ import re
 # time.struct_time
 #
 
-try:
-    import time
-    import calendar
+import time
+import calendar
 
-    def to_struct_time_local(t):
-        return time.localtime(t)
+def to_struct_time_local(t):
+    return time.localtime(t)
 
-    def to_struct_time_utc(t):
-        return time.gmtime(t)
+def to_struct_time_utc(t):
+    return time.gmtime(t)
 
-    def from_struct_time_local(st):
-        return int(time.mktime(st))
+def from_struct_time_local(st):
+    return int(time.mktime(st))
 
-    def from_struct_time_utc(st):
-        return int(calendar.timegm(st))
-
-except ImportError:
-    pass
-
-try:
-    import datetime
-
-    def to_datetime_naive(t):
-        return datetime.datetime.fromtimestamp(t)
-
-
-    def from_datetime_naive(dt):
-        unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, 0)
-        delta = dt - unix_epoch
-        return int(delta.total_seconds())
-
-except ImportError:
-    pass
+def from_struct_time_utc(st):
+    return int(calendar.timegm(st))
 
 #
 # datetime.datetime
 #
 
+import datetime
+
+def to_datetime_naive(t):
+    return datetime.datetime.fromtimestamp(t)
+
+
+def from_datetime_naive(dt):
+    unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, 0)
+    delta = dt - unix_epoch
+    return int(delta.total_seconds())
+
+#
+# datetime.datetime with dateutil.tz
+#
+
 try:
     import dateutil.tz
     
-    def to_datetime_local(t):
+    def _du_to_datetime_local(t):
         naive = datetime.datetime.fromtimestamp(t)
         result = naive.replace(tzinfo=dateutil.tz.tzlocal())
         return result
 
-    def to_datetime_utc(t):
+    def _du_to_datetime_utc(t):
         naive = datetime.datetime.utcfromtimestamp(t)
         result = naive.replace(tzinfo=dateutil.tz.tzutc())
         return result
 
-    def from_datetime_local(dt):
+    def _du_from_datetime_local(dt):
         unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=dateutil.tz.tzutc())
         delta = dt - unix_epoch
         return int(delta.total_seconds())
 
-    def from_datetime_utc(dt):
+    def _du_from_datetime_utc(dt):
         unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=dateutil.tz.tzutc())
         delta = dt - unix_epoch
         return int(delta.total_seconds())
+
+    to_datetime_local   = _du_to_datetime_local
+    to_datetime_utc     = _du_to_datetime_utc
+    from_datetime_local = _du_from_datetime_local
+    from_datetime_utc   = _du_from_datetime_utc
+
+except ImportError:
+    pass
+
+#
+# datetime.datetime with pytz
+#
+
+try:
+    import pytz
+
+    def _get_local_timezone():
+        with open('/etc/timezone') as f:
+            return f.read().strip()
+    _local = pytz.timezone(_get_local_timezone())
+
+    def _tz_to_datetime_local(t, tzname=None, tzinfo=None):
+        if tzname:
+            tzinfo = pytz.timezone(tzname)
+        if not tzinfo:
+            tzinfo = _local
+        return datetime.datetime.utcfromtimestamp(t).replace(tzinfo=pytz.utc).astimezone(tzinfo)
+
+    def _tz_to_datetime_utc(t):
+        return datetime.datetime.utcfromtimestamp(t).replace(tzinfo=pytz.utc)
+
+    def _tz_from_datetime_local(dt):
+        unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+        delta = dt - unix_epoch
+        return int(delta.total_seconds())
+
+    def _tz_from_datetime_utc(dt):
+        unix_epoch = datetime.datetime(1970, 1, 1, 0, 0, 0, tzinfo=pytz.utc)
+        delta = dt - unix_epoch
+        return int(delta.total_seconds())
+
+    to_datetime_local   = _tz_to_datetime_local
+    to_datetime_utc     = _tz_to_datetime_utc
+    from_datetime_local = _tz_from_datetime_local
+    from_datetime_utc   = _tz_from_datetime_utc
 
 except ImportError:
     pass
@@ -116,7 +157,7 @@ try:
         return ephem.Date((t / 86400.0) + 25567.5)
 
     def from_pyephem(d):
-        return -0
+        return int((d - 25567.5) * 86400)
 
 except ImportError:
     pass

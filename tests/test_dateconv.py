@@ -43,8 +43,14 @@ class TestDateTime(unittest.TestCase):
         self.assertEqual(result.minute, 11)
         self.assertEqual(result.second, 0)
 
+    def test_from_datetime_naive(self):
+        datetime = dateconv.to_datetime_naive(T)
+        result = dateconv.from_datetime_naive(datetime)
+        self.assertIsInstance(result, int)
+
+class TestDateUtil(unittest.TestCase):
     def test_to_datetime_local(self):
-        result = dateconv.to_datetime_local(T)
+        result = dateconv._du_to_datetime_local(T)
 
         self.assertIsInstance(result, dateconv.datetime.datetime)
         self.assertEqual(result.year, 1982)
@@ -58,7 +64,7 @@ class TestDateTime(unittest.TestCase):
         self.assertNotEqual(result.tzinfo.tzname(result), "UTC") 
 
     def test_to_datetime_utc(self):
-        result = dateconv.to_datetime_utc(T)
+        result = dateconv._du_to_datetime_utc(T)
 
         self.assertIsInstance(result, dateconv.datetime.datetime)
         self.assertEqual(result.year, 1982)
@@ -71,24 +77,76 @@ class TestDateTime(unittest.TestCase):
         self.assertIsInstance(result.tzinfo, dateconv.datetime.tzinfo)
         self.assertEqual(result.tzinfo.tzname(result), "UTC")
 
-    def test_from_datetime_naive(self):
-        datetime = dateconv.to_datetime_naive(T)
-        result = dateconv.from_datetime_naive(datetime)
-        self.assertIsInstance(result, int)
-
     def test_from_datetime_local(self):
-        datetime = dateconv.to_datetime_local(T)
-        result = dateconv.from_datetime_local(datetime)
+        datetime = dateconv._du_to_datetime_local(T)
+        result = dateconv._du_from_datetime_local(datetime)
 
         self.assertIsInstance(result, int)
         self.assertEqual(result, T)
 
     def test_from_datetime_utc(self):
-        datetime = dateconv.to_datetime_local(T)
-        result = dateconv.from_datetime_utc(datetime)
+        datetime = dateconv._du_to_datetime_utc(T)
+        result = dateconv._du_from_datetime_utc(datetime)
 
         self.assertIsInstance(result, int)
         self.assertEqual(result, T)
+
+class TestPyTZ(unittest.TestCase):
+    def test_to_datetime_local(self):
+        result = dateconv._tz_to_datetime_local(T, tzname="Europe/Amsterdam")
+
+        self.assertIsInstance(result, dateconv.datetime.datetime)
+        self.assertEqual(result.second, 0)
+        self.assertEqual(result.minute, 11)
+        self.assertEqual(result.hour, 1)
+        self.assertEqual(result.day, 9)
+        self.assertEqual(result.month, 6)
+        self.assertEqual(result.year, 1982)
+
+        self.assertIsInstance(result.tzinfo, dateconv.datetime.tzinfo)
+        self.assertEqual(result.tzinfo.tzname(result), "CEST") 
+
+    def test_to_datetime_kralendijk(self):
+        result = dateconv._tz_to_datetime_local(T, tzname="America/Kralendijk")
+
+        self.assertIsInstance(result, dateconv.datetime.datetime)
+        self.assertEqual(result.second, 0)
+        self.assertEqual(result.minute, 11)
+        self.assertEqual(result.hour, 19)
+        self.assertEqual(result.day, 8)
+        self.assertEqual(result.month, 6)
+        self.assertEqual(result.year, 1982)
+
+        self.assertIsInstance(result.tzinfo, dateconv.datetime.tzinfo)
+        self.assertEqual(result.tzinfo.tzname(result), "AST")
+
+    def test_to_datetime_utc(self):
+        result = dateconv._tz_to_datetime_utc(T)
+
+        self.assertIsInstance(result, dateconv.datetime.datetime)
+        self.assertEqual(result.second, 0)
+        self.assertEqual(result.minute, 11)
+        self.assertEqual(result.hour, 23)
+        self.assertEqual(result.day, 8)
+        self.assertEqual(result.month, 6)
+        self.assertEqual(result.year, 1982)
+
+        self.assertIsInstance(result.tzinfo, dateconv.datetime.tzinfo)
+        self.assertEqual(result.tzinfo.tzname(result), "UTC")
+
+    def test_from_datetime_local(self):
+        dt = dateconv._tz_to_datetime_local(T)
+        result = dateconv._tz_from_datetime_local(dt)
+
+        self.assertIsInstance(result, int)
+        self.assertEqual(0, result - T)
+
+    def test_from_datetime_utc(self):
+        dt = dateconv._tz_to_datetime_local(T)
+        result = dateconv._tz_from_datetime_utc(dt)
+
+        self.assertIsInstance(result, int)
+        self.assertEqual(0, result - T)
 
 class TestISO8601(unittest.TestCase):
     def test_to_iso8601(self):
@@ -129,4 +187,9 @@ class TestPyEphem(unittest.TestCase):
         self.assertEqual(result.tuple()[:4], (1982, 6, 8, 23))
 
     def test_from_pyephem(self):
-        pass
+        ephem = dateconv.to_pyephem(T)
+        result = dateconv.from_pyephem(ephem)
+
+        self.assertIsInstance(result, int)
+        self.assertTrue(result - T <= 1)
+
